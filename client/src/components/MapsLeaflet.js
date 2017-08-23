@@ -69,7 +69,7 @@ class MapsLeaflet extends React.Component {
       }).addTo(mapTemp)
 
       nextProps.markerList.forEach( x => {
-        marker([Number(x.lat), Number(x.lng)], {icon: this.state.markerIcon}).addTo(mapTemp)
+        marker([Number(x.lat), Number(x.lng)], {icon: this.state.markerIcon}).addTo(mapTemp).bindPopup(`Name: ${x.name}\nAddress: ${x.address}`)
       })
 
       this.setState({
