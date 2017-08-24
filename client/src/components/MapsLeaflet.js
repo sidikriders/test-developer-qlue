@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { Map, TileLayer, Marker, Popup } from 'react-leaflet';
 import { icon } from 'leaflet';
 
-import { getMarkerLocation } from '../actions';
+import { getMarkerLocation, getWazeMarker } from '../actions';
 
 class MapsLeaflet extends React.Component {
   constructor() {
@@ -13,7 +13,13 @@ class MapsLeaflet extends React.Component {
       markerIcon: icon({
         iconUrl: 'http://www.qlue.co.id/vacancy/svc/icon-marker.png'
       }),
+      wazeIcon: icon({
+        iconUrl: "https://i.stack.imgur.com/6cDGi.png",
+        iconSize: [38, 40]
+      }),
       showNavigation: false,
+      showMarkerTerminal: true,
+      showWazeMarker: true,
       style: {
         navBar: {
           width: '5%',
@@ -44,18 +50,47 @@ class MapsLeaflet extends React.Component {
                 attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
               />
               {
-                this.props.markerList.map( x => {
-                  return (
-                    <Marker key={x.placemark_id} position={[Number(x.lat), Number(x.lng)]} icon={this.state.markerIcon}>
-                      <Popup>
-                        <span>
-                          <h4>{x.name}</h4>
-                          <p>{x.address}</p>
-                        </span>
-                      </Popup>
-                    </Marker>
-                  )
-                })
+                this.state.showNavigation ?
+                <div>
+                  {
+                    this.state.showMarkerTerminal ?
+                      this.props.markerList.map( x => {
+                        return (
+                          <Marker key={x.placemark_id} position={[Number(x.lat), Number(x.lng)]} icon={this.state.markerIcon}>
+                            <Popup>
+                              <span>
+                                <h4>{x.name}</h4>
+                                <p>{x.address}</p>
+                              </span>
+                            </Popup>
+                          </Marker>
+                        )
+                      })
+                    :
+                    null
+                  }
+                  {
+                    this.state.showWazeMarker ?
+                      this.props.wazeList.map( x => {
+                        if (x.reliability > 6) {
+                          return (
+                            <Marker key={x.uuid} position={[Number(x.location.y), Number(x.location.x)]} icon={this.state.wazeIcon} style={{width: "10px", height: "10px"}}>
+                              <Popup>
+                                <span>
+                                  <h4>{x.subtype}</h4>
+                                  <p>{x.street}</p>
+                                </span>
+                              </Popup>
+                            </Marker>
+                          )
+                        }
+                      })
+                    :
+                    null
+                  }
+                </div>
+                :
+                null
               }
             </div>
             :
@@ -68,14 +103,15 @@ class MapsLeaflet extends React.Component {
             <div>
               <div style={{textAlign: "right", paddingRight: "10px", paddingTop: "10px"}}>
                 <button onClick={() => this.showNavBar()}>
-                  <img style={{ height: "30px", width: "30px" }} src="https://cdn4.iconfinder.com/data/icons/flat-black/128/menu.png"/>
+                  <img alt="burger-menu" style={{ height: "30px", width: "30px" }} src="https://cdn4.iconfinder.com/data/icons/flat-black/128/menu.png"/>
                 </button>
               </div>
               {
                 this.state.showNavigation ?
                 <div>
                   <h2><strong>Marker Navigation</strong></h2>
-                  <div style={{textAlign: "left"}}>
+                  <span><button onClick={() => this.showMarkerTerminal()}>Terminal Marker</button></span><span style={{marginLeft: "30px"}}><button onClick={() => this.showWazeMarker()}>Waze Marker</button></span>
+                  <div style={{textAlign: "left", marginTop: "30px"}}>
                     {
                       this.props.markerList.map( (x) => {
                         let lat = x.lat;
@@ -101,6 +137,30 @@ class MapsLeaflet extends React.Component {
     )
   }
 
+  showMarkerTerminal() {
+    if (this.state.showMarkerTerminal) {
+      this.setState({
+        showMarkerTerminal: false
+      })
+    } else {
+      this.setState({
+        showMarkerTerminal: true
+      })
+    }
+  }
+
+  showWazeMarker() {
+    if (this.state.showWazeMarker) {
+      this.setState({
+        showWazeMarker: false
+      })
+    } else {
+      this.setState({
+        showWazeMarker: true
+      })
+    }
+  }
+
   showNavBar() {
     if (this.state.showNavigation) {
       this.setState({
@@ -123,6 +183,7 @@ class MapsLeaflet extends React.Component {
 
   componentWillMount() {
     this.props.getMarkerLocation()
+    this.props.getWazeMarker()
   }
 
   componentWillReceiveProps(nextProps) {
@@ -137,13 +198,15 @@ class MapsLeaflet extends React.Component {
 
 let mapStateToProps = (state) => {
   return {
-    markerList: state.mapState.markerList
+    markerList: state.mapState.markerList,
+    wazeList: state.mapState.wazeList
   }
 }
 
 let mapDispatchToProps = (dispatch) => {
   return {
-    getMarkerLocation: () => dispatch(getMarkerLocation())
+    getMarkerLocation: () => dispatch(getMarkerLocation()),
+    getWazeMarker: () => dispatch(getWazeMarker())
   }
 }
 
