@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { marker, map, tileLayer, icon } from 'leaflet';
+import { Map, TileLayer, Marker, Popup } from 'react-leaflet';
+import { icon } from 'leaflet';
 
 import { getMarkerLocation } from '../actions';
 
@@ -8,7 +9,7 @@ class MapsLeaflet extends React.Component {
   constructor() {
     super()
     this.state = {
-      myMap: "",
+      centerView: [51.505, -0.09],
       markerIcon: icon({
         iconUrl: 'http://www.qlue.co.id/vacancy/svc/icon-marker.png'
       })
@@ -16,10 +17,35 @@ class MapsLeaflet extends React.Component {
   }
   render() {
     return (
-      <div style={{display: "flex", flexDirection: "row"}}>
-        <div id="petanya" style={{width: '50%', height: '100vh', border: 'black 2px solid'}}>
-        </div>
-        <div id="navigasinya" style={{width: '50%', height: '100vh', border: 'black 2px solid', overflowY: "scroll"}}>
+      <div style={{display: "flex"}}>
+        <Map center={this.state.centerView} zoom={13} style={{width: '50%', height: '100vh', borderRight: 'black 2px solid'}}>
+          {
+            this.props.markerList.length > 0 ?
+            <div>
+              <TileLayer
+                url='http://{s}.tile.osm.org/{z}/{x}/{y}.png'
+                attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              />
+              {
+                this.props.markerList.map( x => {
+                  return (
+                    <Marker key={x.placemark_id} position={[Number(x.lat), Number(x.lng)]} icon={this.state.markerIcon}>
+                      <Popup>
+                        <span>
+                          <h4>{x.name}</h4>
+                          <p>{x.address}</p>
+                        </span>
+                      </Popup>
+                    </Marker>
+                  )
+                })
+              }
+            </div>
+            :
+            null
+          }
+        </Map>
+        <div id="navigasinya" style={{width: '50%', height: '100vh', borderLeft: 'black 1px solid', overflowY: "scroll", paddingLeft: "20px"}}>
           {
             this.props.markerList.length > 0 ?
             <div>
@@ -47,11 +73,8 @@ class MapsLeaflet extends React.Component {
   }
 
   changeMapView(lat, lng) {
-    console.log(lat, lng);
-    let mapTemp = this.state.myMap
-    mapTemp.setView([Number(lat), Number(lng)], 13)
     this.setState({
-      myMap: mapTemp
+      centerView: [Number(lat), Number(lng)]
     })
   }
 
@@ -61,19 +84,8 @@ class MapsLeaflet extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     if (this.props.markerList !== nextProps.markerList) {
-      console.log("lat & lang", Number(nextProps.markerList[0].lat, 10), Number(nextProps.markerList[0].lng, 10));
-      let mapTemp = map('petanya').setView([Number(nextProps.markerList[0].lat, 10), Number(nextProps.markerList[0].lng, 10)], 13)
-
-      tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(mapTemp)
-
-      nextProps.markerList.forEach( x => {
-        marker([Number(x.lat), Number(x.lng)], {icon: this.state.markerIcon}).addTo(mapTemp).bindPopup(`Name: ${x.name}\nAddress: ${x.address}`)
-      })
-
       this.setState({
-        myMap: mapTemp
+        centerView: [Number(nextProps.markerList[0].lat), Number(nextProps.markerList[0].lng)]
       })
     }
   }
